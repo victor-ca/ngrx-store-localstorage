@@ -40,7 +40,7 @@ const createLocalStorageMiddleware = (keys : string[]) => {
     }
 };
 
-export const localStorageMiddleware = (keys : string[], rehydrateState = false) => {
+export const localStorageMiddleware = (keys : string[], rehydrateState : boolean = false) => {
     const middleware = createLocalStorageMiddleware(keys);
     const localStorageProvider = provide(POST_MIDDLEWARE, {
         multi: true,
