@@ -1,4 +1,4 @@
-import {provide} from 'angular2/core';
+import {provide, Provider} from 'angular2/core';
 import {Observable} from 'rxjs/Observable';
 import {POST_MIDDLEWARE, INITIAL_STATE} from '@ngrx/store';
 
@@ -16,12 +16,12 @@ const validateStateKeys = (keys: string[]) => {
 
 const rehydrateApplicationState = (keys: string[]) => {
     let rehydratedState = keys.reduce((acc, curr) => {
-            let stateSlice = localStorage.getItem(curr);
-    if(typeof(stateSlice) !== 'undefined'){
-        return Object.assign({}, acc, { [curr]: JSON.parse(stateSlice) })
-    }
-    return acc;
-}, {});
+        let stateSlice = localStorage.getItem(curr);
+        if(typeof(stateSlice) !== 'undefined'){
+            return Object.assign({}, acc, { [curr]: JSON.parse(stateSlice) })
+        }
+        return acc;
+    }, {});
 
     return provide(INITIAL_STATE, { useValue: rehydratedState });
 };
@@ -30,13 +30,13 @@ const createLocalStorageMiddleware = (keys : string[]) => {
     const stateKeys = validateStateKeys(keys);
     return (obs:Observable<any>) => {
         return obs.do(state => {
-                stateKeys.forEach(key => {
+            stateKeys.forEach(key => {
                 let stateSlice = state[key];
-        if (typeof(stateSlice) !== 'undefined') {
-            localStorage.setItem(key, JSON.stringify(state[key]));
-        }
-    });
-    });
+                if (typeof(stateSlice) !== 'undefined') {
+                    localStorage.setItem(key, JSON.stringify(state[key]));
+                }
+            });
+        });
     }
 };
 

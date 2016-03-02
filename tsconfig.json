@@ -10,7 +10,7 @@
   },
   "files": [
     "typings/main.d.ts",
-    "lib/index.ts"
+    "src/index.ts"
   ],
   "exclude": [
     "node_modules"
