@@ -10,8 +10,8 @@ npm install ngrx-store-localstorage --save
 ```
 
 1. Configure your ngrx store as normal using `provideStore`. 
-2. Using the provided `localStorageMiddleware` function specify the slices of state you would like to keep synced with local storage. 
-3. Optionally specify whether to rehydrate this state from local storage as `initialState` on application startup.
+2. Using the provided `localStorageMiddleware` function, specify the slices of state you would like to keep synced with local storage. 
+3. Optionally specify whether to rehydrate this state from local storage as `initialState` on application bootstrap.
 
 ```ts
 import {bootstrap} from 'angular2/platform/browser';
