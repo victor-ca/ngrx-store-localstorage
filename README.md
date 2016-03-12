@@ -17,7 +17,7 @@ npm install ngrx-store-localstorage --save
 import {bootstrap} from 'angular2/platform/browser';
 import {TodoApp} from './todo-app';
 import {provideStore} from "@ngrx/store";
-import {localStorageMiddleware} from "../local-storage";
+import {localStorageMiddleware} from "ngrx-store-localstorage";
 
 export function main() {
   return bootstrap(TodoApp, [
