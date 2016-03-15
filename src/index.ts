@@ -4,20 +4,20 @@ import {POST_MIDDLEWARE, INITIAL_STATE} from '@ngrx/store';
 
 const validateStateKeys = (keys: string[]) => {
     return keys.map(key => {
-            if(typeof(key) !== 'string'){
-        throw new TypeError(
-            `localStorageMiddleware Unknown Parameter Type: `
-            + `Expected type of string, got ${typeof key}`
-        );
-    }
-    return key;
-});
+        if(typeof(key) !== 'string'){
+            throw new TypeError(
+                `localStorageMiddleware Unknown Parameter Type: `
+                + `Expected type of string, got ${typeof key}`
+            );
+        }
+        return key;
+    });
 };
 
 const rehydrateApplicationState = (keys: string[]) => {
     let rehydratedState = keys.reduce((acc, curr) => {
         let stateSlice = localStorage.getItem(curr);
-        if(typeof(stateSlice) !== 'undefined'){
+        if(stateSlice){
             return Object.assign({}, acc, { [curr]: JSON.parse(stateSlice) })
         }
         return acc;
