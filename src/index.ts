@@ -1,5 +1,6 @@
 import {provide, Provider} from '@angular/core';
 import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/operator/do';
 import {POST_MIDDLEWARE, INITIAL_STATE} from '@ngrx/store';
 
 const validateStateKeys = (keys: string[]) => {
