@@ -16,7 +16,7 @@ npm install ngrx-store-localstorage --save
 ```ts
 import {bootstrap} from '@angular/platform-browser-dynamic';
 import {TodoApp} from './todo-app';
-import {provideStore, compose} from "@ngrx/store";
+import {provideStore, compose, combineReducers} from "@ngrx/store";
 import {localStorageSync} from "ngrx-store-localstorage";
 
 export function main() {
