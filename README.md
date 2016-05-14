@@ -8,21 +8,25 @@ Simple syncing between ngrx store and local storage
 ```bash
 npm install ngrx-store-localstorage --save
 ```
-
-1. Configure your ngrx store as normal using `provideStore`. 
-2. Using the provided `localStorageMiddleware` function, specify the slices of state you would like to keep synced with local storage. 
+1. Import `compose` from `@ngrx/store`
+2. Invoke the `localStorageSync` function after `combineReducers`, specifying the slices of state you would like to keep synced with local storage. 
 3. Optionally specify whether to rehydrate this state from local storage as `initialState` on application bootstrap.
+4. Invoke composed function with application reducers as an argument to `provideStore`. 
 
 ```ts
-import {bootstrap} from 'angular2/platform/browser';
+import {bootstrap} from '@angular/platform-browser-dynamic';
 import {TodoApp} from './todo-app';
-import {provideStore} from "@ngrx/store";
-import {localStorageMiddleware} from "ngrx-store-localstorage";
+import {provideStore, compose} from "@ngrx/store";
+import {localStorageSync} from "ngrx-store-localstorage";
 
 export function main() {
   return bootstrap(TodoApp, [
-      provideStore({todos, visibilityFilter}),
-      localStorageMiddleware(['todos', 'visibilityFilter'], true)
+    provideStore(
+        compose(
+            localStorageSync(['todos']),
+            combineReducers
+        )({todos, visibilityFilter})
+    )
   ])
   .catch(err => console.error(err));
 }
@@ -31,8 +35,9 @@ document.addEventListener('DOMContentLoaded', main);
 ```
 
 ## API
-### `localStorageMiddleware(keys : string[], rehydrateState : boolean = false)`
+### `localStorageSync(keys : string[], rehydrateState : boolean = false) : Reducer`
 Provide state (reducer) keys to sync with local storage. Optionally specify whether to rehydrate `initialState` from local storage on bootstrap.
+*Returns a meta-reducer*
 
 #### Arguments
 * `keys` \(*string[]*): State keys to sync with local storage

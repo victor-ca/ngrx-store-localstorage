@@ -1,13 +1,20 @@
-import {provide, Provider} from '@angular/core';
-import {Observable} from 'rxjs/Observable';
-import 'rxjs/add/operator/do';
-import {POST_MIDDLEWARE, INITIAL_STATE} from '@ngrx/store';
+const detectDate = /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/;
+
+//correctly parse dates from local storage
+const parseWithDates = (jsonData: string) => {
+    return JSON.parse(jsonData, (key: any, value: any) => {
+        if (typeof value === 'string' && (this.detectDate.test(value))) {
+            return new Date(value);
+        }
+        return value;
+    });
+};
 
 const validateStateKeys = (keys: string[]) => {
     return keys.map(key => {
         if(typeof(key) !== 'string'){
             throw new TypeError(
-                `localStorageMiddleware Unknown Parameter Type: `
+                `localStorageSync Unknown Parameter Type: `
                 + `Expected type of string, got ${typeof key}`
             );
         }
@@ -16,39 +23,35 @@ const validateStateKeys = (keys: string[]) => {
 };
 
 const rehydrateApplicationState = (keys: string[]) => {
-    let rehydratedState = keys.reduce((acc, curr) => {
+    return keys.reduce((acc, curr) => {
         let stateSlice = localStorage.getItem(curr);
         if(stateSlice){
             return Object.assign({}, acc, { [curr]: JSON.parse(stateSlice) })
         }
         return acc;
     }, {});
-
-    return provide(INITIAL_STATE, { useValue: rehydratedState });
 };
 
-const createLocalStorageMiddleware = (keys : string[]) => {
-    const stateKeys = validateStateKeys(keys);
-    return (obs:Observable<any>) => {
-        return obs.do(state => {
-            stateKeys.forEach(key => {
-                let stateSlice = state[key];
-                if (typeof(stateSlice) !== 'undefined') {
-                    localStorage.setItem(key, JSON.stringify(state[key]));
-                }
-            });
-        });
-    }
-};
-
-export const localStorageMiddleware = (keys : string[], rehydrateState : boolean = false) => {
-    const middleware = createLocalStorageMiddleware(keys);
-    const localStorageProvider = provide(POST_MIDDLEWARE, {
-        multi: true,
-        useValue: middleware
+const syncStateUpdate = (state : any, keys : string[]) => {
+    keys.forEach(key => {
+        let stateSlice = state[key];
+        if (typeof(stateSlice) !== 'undefined') {
+            try{
+                localStorage.setItem(key, JSON.stringify(state[key]));
+            } catch(e){
+                console.warn('Unable to save state to localStorage:', e);
+            }
+        }
     });
+};
 
-    return rehydrateState
-        ? [localStorageProvider, rehydrateApplicationState(keys)]
-        : [localStorageProvider]
+export const localStorageSync = (keys : string[], rehydrate : boolean = false) => (reducer : any) => {
+    const stateKeys = validateStateKeys(keys);
+    const rehydratedState = rehydrate ? rehydrateApplicationState(stateKeys) : undefined;
+
+    return function(state = rehydratedState, action : any){
+        const nextState = reducer(state, action);
+        syncStateUpdate(nextState, stateKeys);
+        return nextState;
+    };
 };
