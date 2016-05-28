@@ -8,7 +8,7 @@ Simple syncing between ngrx store and local storage
 ```bash
 npm install ngrx-store-localstorage --save
 ```
-1. Import `compose` and `combineReducers` from `@ngrx/store`
+1. Import `compose` and `combineReducers` from `@ngrx/store` and `@ngrx/core/compose`
 2. Invoke the `localStorageSync` function after `combineReducers`, specifying the slices of state you would like to keep synced with local storage. 
 3. Optionally specify whether to rehydrate this state from local storage as `initialState` on application bootstrap.
 4. Invoke composed function with application reducers as an argument to `provideStore`. 
@@ -16,7 +16,8 @@ npm install ngrx-store-localstorage --save
 ```ts
 import {bootstrap} from '@angular/platform-browser-dynamic';
 import {TodoApp} from './todo-app';
-import {provideStore, compose} from "@ngrx/store";
+import {provideStore} from "@ngrx/store";
+import {compose} from "@ngrx/core/compose";
 import {localStorageSync} from "ngrx-store-localstorage";
 
 export function main() {
