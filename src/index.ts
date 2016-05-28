@@ -1,3 +1,4 @@
+const INIT_ACTION = "@ngrx/store/init";
 const detectDate = /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/;
 
 //correctly parse dates from local storage
@@ -26,7 +27,7 @@ const rehydrateApplicationState = (keys: string[]) => {
     return keys.reduce((acc, curr) => {
         let stateSlice = localStorage.getItem(curr);
         if(stateSlice){
-            return Object.assign({}, acc, { [curr]: JSON.parse(stateSlice) })
+            return Object.assign({}, acc, { [curr]: parseWithDates(stateSlice) })
         }
         return acc;
     }, {});
@@ -50,6 +51,13 @@ export const localStorageSync = (keys : string[], rehydrate : boolean = false) =
     const rehydratedState = rehydrate ? rehydrateApplicationState(stateKeys) : undefined;
 
     return function(state = rehydratedState, action : any){
+        /*
+         Handle case where state is rehydrated AND initial state is supplied.
+         Any additional state supplied will override rehydrated state for the given key.
+         */
+        if(action.type === INIT_ACTION && rehydratedState){
+            state = Object.assign({}, rehydratedState, state);
+        }
         const nextState = reducer(state, action);
         syncStateUpdate(nextState, stateKeys);
         return nextState;
