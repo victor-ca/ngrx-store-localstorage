@@ -4,7 +4,7 @@ const detectDate = /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/;
 //correctly parse dates from local storage
 const parseWithDates = (jsonData: string) => {
     return JSON.parse(jsonData, (key: any, value: any) => {
-        if (typeof value === 'string' && (this.detectDate.test(value))) {
+        if (typeof value === 'string' && (detectDate.test(value))) {
             return new Date(value);
         }
         return value;
