@@ -56,7 +56,7 @@ export const localStorageSync = (keys : string[], rehydrate : boolean = false) =
          Any additional state supplied will override rehydrated state for the given key.
          */
         if(action.type === INIT_ACTION && rehydratedState){
-            state = Object.assign({}, rehydratedState, state);
+            state = Object.assign({}, state, rehydratedState);
         }
         const nextState = reducer(state, action);
         syncStateUpdate(nextState, stateKeys);
