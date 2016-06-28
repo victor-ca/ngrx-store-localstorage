@@ -11,12 +11,18 @@ const parseWithDates = (jsonData: string) => {
     });
 };
 
-const validateStateKeys = (keys: string[]) => {
+const validateStateKeys = (keys: any[]) => {
     return keys.map(key => {
-        if(typeof(key) !== 'string'){
+        let attr = key;
+
+        if (typeof key == 'object') {
+          attr = Object.keys(key)[0];
+        }
+
+        if(typeof(attr) !== 'string'){
             throw new TypeError(
                 `localStorageSync Unknown Parameter Type: `
-                + `Expected type of string, got ${typeof key}`
+                + `Expected type of string, got ${typeof attr}`
             );
         }
         return key;
@@ -35,10 +41,27 @@ const rehydrateApplicationState = (keys: string[]) => {
 
 const syncStateUpdate = (state : any, keys : string[]) => {
     keys.forEach(key => {
+
         let stateSlice = state[key];
+
+        if (typeof key == 'object') {
+          let name = Object.keys(key)[0];
+          stateSlice = state[name];
+
+          if (key[name]) {
+            stateSlice = key[name].map(function (attr) {
+              let obj = {};
+              obj[attr] = stateSlice[attr];
+              return obj;
+            });
+          }
+
+          key = name;
+        }
+
         if (typeof(stateSlice) !== 'undefined') {
             try{
-                localStorage.setItem(key, JSON.stringify(state[key]));
+                localStorage.setItem(key, JSON.stringify(stateSlice));
             } catch(e){
                 console.warn('Unable to save state to localStorage:', e);
             }
@@ -46,7 +69,7 @@ const syncStateUpdate = (state : any, keys : string[]) => {
     });
 };
 
-export const localStorageSync = (keys : string[], rehydrate : boolean = false) => (reducer : any) => {
+export const localStorageSync = (keys : any[], rehydrate : boolean = false) => (reducer : any) => {
     const stateKeys = validateStateKeys(keys);
     const rehydratedState = rehydrate ? rehydrateApplicationState(stateKeys) : undefined;
 
