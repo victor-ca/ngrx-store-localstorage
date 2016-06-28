@@ -52,7 +52,7 @@ const syncStateUpdate = (state : any, keys : string[]) => {
           stateSlice = state[name];
 
           if (key[name]) {
-            stateSlice = key[name].map(function (memo, attr) {
+            stateSlice = key[name].reduce(function (memo, attr) {
               memo[attr] = stateSlice[attr];
               return memo;
             }, {});
