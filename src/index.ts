@@ -31,6 +31,9 @@ const validateStateKeys = (keys: any[]) => {
 
 const rehydrateApplicationState = (keys: string[]) => {
     return keys.reduce((acc, curr) => {
+        if (typeof curr == 'object') {
+          curr = Object.keys(curr)[0];
+        }
         let stateSlice = localStorage.getItem(curr);
         if(stateSlice){
             return Object.assign({}, acc, { [curr]: parseWithDates(stateSlice) })
@@ -49,11 +52,10 @@ const syncStateUpdate = (state : any, keys : string[]) => {
           stateSlice = state[name];
 
           if (key[name]) {
-            stateSlice = key[name].map(function (attr) {
-              let obj = {};
-              obj[attr] = stateSlice[attr];
-              return obj;
-            });
+            stateSlice = key[name].map(function (memo, attr) {
+              memo[attr] = stateSlice[attr];
+              return memo;
+            }, {});
           }
 
           key = name;
