@@ -30,7 +30,7 @@
     "@ngrx/store": "^2.0.0"
   },
   "devDependencies": {
-    "@angular/core": "2.0.0-rc.3",
+    "@angular/core": "^2.0.0-rc.1",
     "@ngrx/core": "^1.0.0",
     "es6-promise": "^3.0.2",
     "es6-shim": "^0.33.13",
