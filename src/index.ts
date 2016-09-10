@@ -27,7 +27,7 @@ const validateStateKeys = (keys: any[]) => {
     });
 };
 
-const rehydrateApplicationState = (keys: string[]) => {
+const rehydrateApplicationState = (keys: any[]) => {
     return keys.reduce((acc, curr) => {
         let key = curr;
         let reviver = dateReviver;
@@ -60,7 +60,7 @@ const rehydrateApplicationState = (keys: string[]) => {
     }, {});
 };
 
-const syncStateUpdate = (state : any, keys : string[]) => {
+const syncStateUpdate = (state : any, keys : any[]) => {
     keys.forEach(key => {
 
         let stateSlice = state[key];
