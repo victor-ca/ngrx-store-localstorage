@@ -2,7 +2,7 @@ const INIT_ACTION = "@ngrx/store/init";
 const detectDate = /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/;
 
 //correctly parse dates from local storage
-const dateReviver = (key : string, value : any) => {
+export const dateReviver = (key : string, value : any) => {
     if (typeof value === 'string' && (detectDate.test(value))) {
         return new Date(value);
     }
@@ -27,7 +27,7 @@ const validateStateKeys = (keys: any[]) => {
     });
 };
 
-const rehydrateApplicationState = (keys: any[], storage : Storage) => {
+export const rehydrateApplicationState = (keys: any[], storage : Storage) => {
     return keys.reduce((acc, curr) => {
         let key = curr;
         let reviver = dateReviver;
@@ -60,7 +60,7 @@ const rehydrateApplicationState = (keys: any[], storage : Storage) => {
     }, {});
 };
 
-const syncStateUpdate = (state : any, keys : any[], storage : Storage) => {
+export const syncStateUpdate = (state : any, keys : any[], storage : Storage) => {
     keys.forEach(key => {
 
         let stateSlice = state[key];
