@@ -76,19 +76,22 @@ export const syncStateUpdate = (state : any, keys : any[], storage : Storage) =>
                 if (key[name].serialize) {
                     stateSlice = key[name].serialize(stateSlice);
                 }
-                
-                // If either the direct value is an array or if there is a filter member
-                //  on the field object, only save off the fields specified by the filter 
-                let filter = key[name];
-                if (key[name].reduce) {
-                    filter = key[name];
-                }
-                if (filter)
-                {
-                    stateSlice = filter.reduce((memo, attr) => {
-                        memo[attr] = stateSlice[attr];
-                        return memo;
-                    }, {});
+                // Else filter on fields if an array has been provided
+                else {
+                    let filter = undefined;
+                    if (key[name].reduce) {
+                        filter = key[name];
+                    }
+                    else if (key[name].filter) {
+                        filter = key[name].filter;
+                    }
+                    if (filter) {
+                        stateSlice = filter.reduce((memo, attr) => {
+                            memo[attr] = stateSlice[attr];
+                            return memo;
+                        }, {});
+
+                    }
                 }
 
                 // replacer and space arguments to pass to JSON.stringify
@@ -102,7 +105,7 @@ export const syncStateUpdate = (state : any, keys : any[], storage : Storage) =>
 
         if (typeof(stateSlice) !== 'undefined') {
             try{
-                storage.setItem(key, typeof stateSlice == 'string' ? stateSlice : JSON.stringify(stateSlice,replacer));
+                storage.setItem(key, typeof stateSlice == 'string' ? stateSlice : JSON.stringify(stateSlice,replacer,space));
             } catch(e){
                 console.warn('Unable to save state to localStorage:', e);
             }
