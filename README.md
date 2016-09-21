@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', main);
 ```
 
 ## API
-### `localStorageSync(keys : any[], rehydrateState : boolean = false) : Reducer`
+### `localStorageSync(keys : any[], rehydrateState : boolean = false, storage: Storage = localStorage) : Reducer`
 Provide state (reducer) keys to sync with local storage. Optionally specify whether to rehydrate `initialState` from local storage on bootstrap.
 *Returns a meta-reducer*
 
@@ -65,3 +65,5 @@ Provide state (reducer) keys to sync with local storage. Optionally specify whet
             * filter: an array of properties which should be synced (same format as the stand-along array specified above)            
 
 * `rehydrateState` \(*boolean? = false*): Pull initial state from local storage on startup
+
+* `storage` \(*Storage? = localStorage*): Specify an object that conforms to the Storage interface to use, this will default localStorage 
