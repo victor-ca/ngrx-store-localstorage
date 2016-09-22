@@ -2,13 +2,11 @@ const INIT_ACTION = "@ngrx/store/init";
 const detectDate = /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/;
 
 //correctly parse dates from local storage
-const parseWithDates = (jsonData: string) => {
-    return JSON.parse(jsonData, (key: any, value: any) => {
-        if (typeof value === 'string' && (detectDate.test(value))) {
-            return new Date(value);
-        }
-        return value;
-    });
+export const dateReviver = (key : string, value : any) => {
+    if (typeof value === 'string' && (detectDate.test(value))) {
+        return new Date(value);
+    }
+    return value;
 };
 
 const validateStateKeys = (keys: any[]) => {
@@ -29,41 +27,87 @@ const validateStateKeys = (keys: any[]) => {
     });
 };
 
-const rehydrateApplicationState = (keys: string[]) => {
+export const rehydrateApplicationState = (keys: any[], storage : Storage) => {
     return keys.reduce((acc, curr) => {
-        if (typeof curr == 'object') {
-          curr = Object.keys(curr)[0];
+        let key = curr;
+        let reviver = dateReviver;
+        let deserialize = undefined;
+
+        if (typeof key == 'object') {
+          key = Object.keys(key)[0];
+          // use the custom reviver function
+          if (typeof curr[key] === 'function') {
+              reviver = curr[key];
+          }
+          else {
+              // use custom reviver function if available
+              if (curr[key].reviver) {
+                reviver = curr[key].reviver;              
+              }
+              // use custom serialize function if available
+              if (curr[key].deserialize) {
+                deserialize = curr[key].deserialize;
+              }
+          }
         }
-        let stateSlice = localStorage.getItem(curr);
+
+        let stateSlice = storage.getItem(key);
         if(stateSlice){
-            return Object.assign({}, acc, { [curr]: parseWithDates(stateSlice) })
+            let raw = JSON.parse(stateSlice,reviver);
+            return Object.assign({}, acc, { [key]: deserialize ? deserialize(raw) : raw});
         }
         return acc;
     }, {});
 };
 
-const syncStateUpdate = (state : any, keys : string[]) => {
+export const syncStateUpdate = (state : any, keys : any[], storage : Storage) => {
     keys.forEach(key => {
 
         let stateSlice = state[key];
+        let replacer = undefined;
+        let space = undefined;
 
         if (typeof key == 'object') {
-          let name = Object.keys(key)[0];
-          stateSlice = state[name];
+            let name = Object.keys(key)[0];
+            stateSlice = state[name];          
 
-          if (key[name]) {
-            stateSlice = key[name].reduce((memo, attr) => {
-              memo[attr] = stateSlice[attr];
-              return memo;
-            }, {});
-          }
+            if (key[name]) {
+                // use serialize function if specified.
+                if (key[name].serialize) {
+                    stateSlice = key[name].serialize(stateSlice);
+                }
+                // if serialize function is not specified filter on fields if an array has been provided.
+                else {
+                    let filter = undefined;
+                    if (key[name].reduce) {
+                        filter = key[name];
+                    }
+                    else if (key[name].filter) {
+                        filter = key[name].filter;
+                    }
+                    if (filter) {
+                        stateSlice = filter.reduce((memo, attr) => {
+                            memo[attr] = stateSlice[attr];
+                            return memo;
+                        }, {});
 
-          key = name;
+                    }
+                }
+
+                /* 
+                    Replacer and space arguments to pass to JSON.stringify.
+                    If these fields don't exist, undefined will be passed.
+                */
+                replacer = key[name].replacer;
+                space = key[name].space;
+            }
+
+            key = name;
         }
 
         if (typeof(stateSlice) !== 'undefined') {
             try{
-                localStorage.setItem(key, JSON.stringify(stateSlice));
+                storage.setItem(key, typeof stateSlice == 'string' ? stateSlice : JSON.stringify(stateSlice,replacer,space));
             } catch(e){
                 console.warn('Unable to save state to localStorage:', e);
             }
@@ -71,9 +115,9 @@ const syncStateUpdate = (state : any, keys : string[]) => {
     });
 };
 
-export const localStorageSync = (keys : any[], rehydrate : boolean = false) => (reducer : any) => {
+export const localStorageSync = (keys : any[], rehydrate : boolean = false, storage: Storage = localStorage) => (reducer : any) => {
     const stateKeys = validateStateKeys(keys);
-    const rehydratedState = rehydrate ? rehydrateApplicationState(stateKeys) : undefined;
+    const rehydratedState = rehydrate ? rehydrateApplicationState(stateKeys, storage) : undefined;
 
     return function(state = rehydratedState, action : any){
         /*
@@ -84,7 +128,7 @@ export const localStorageSync = (keys : any[], rehydrate : boolean = false) => (
             state = Object.assign({}, state, rehydratedState);
         }
         const nextState = reducer(state, action);
-        syncStateUpdate(nextState, stateKeys);
+        syncStateUpdate(nextState, stateKeys, storage);
         return nextState;
     };
 };
