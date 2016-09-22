@@ -35,7 +35,7 @@ export const rehydrateApplicationState = (keys: any[], storage : Storage) => {
 
         if (typeof key == 'object') {
           key = Object.keys(key)[0];
-          // Use the custom reviver function
+          // use the custom reviver function
           if (typeof curr[key] === 'function') {
               reviver = curr[key];
           }
@@ -72,11 +72,11 @@ export const syncStateUpdate = (state : any, keys : any[], storage : Storage) =>
             stateSlice = state[name];          
 
             if (key[name]) {
-                // If a serialize function is specified us it
+                // use serialize function if specified.
                 if (key[name].serialize) {
                     stateSlice = key[name].serialize(stateSlice);
                 }
-                // Else filter on fields if an array has been provided
+                // if serialize function is not specified filter on fields if an array has been provided.
                 else {
                     let filter = undefined;
                     if (key[name].reduce) {
@@ -94,8 +94,10 @@ export const syncStateUpdate = (state : any, keys : any[], storage : Storage) =>
                     }
                 }
 
-                // replacer and space arguments to pass to JSON.stringify
-                //  If these fields don't exist, undefined will just be passed
+                /* 
+                    Replacer and space arguments to pass to JSON.stringify.
+                    If these fields don't exist, undefined will be passed.
+                */
                 replacer = key[name].replacer;
                 space = key[name].space;
             }
