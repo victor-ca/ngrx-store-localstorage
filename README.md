@@ -15,7 +15,8 @@ npm install ngrx-store-localstorage --save
 ```ts
 import { Store, StoreModule } from '@ngrx/store';
 import { todos, visibilityFilter } from './reducers';
-import { NgModule } from '@angular/core'
+import { NgModule } from '@angular/core';
+import { localStorageSync } from 'ngrx-store-localstorage';
 
 @NgModule({
   imports: [
