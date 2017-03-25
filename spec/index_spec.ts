@@ -304,7 +304,7 @@ describe('ngrxLocalStorage', () => {
         keys = [{ state: { encrypt: TypeC.encrypt } }];
 
         syncStateUpdate(initialState, keys, s, false);
-        // Stored value must not be encripted, so must be equal to the on-memory state 
+        // Stored value must not be encripted due to decrypt function is not present, so must be equal to the on-memory state 
         let raw = s.getItem('state');
         expect(raw).toEqual(JSON.stringify(initialState.state));
 
