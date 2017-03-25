@@ -2,6 +2,7 @@ declare var beforeEachProviders, it, describe, expect, inject;
 require('es6-shim');
 require('reflect-metadata');
 import { syncStateUpdate, rehydrateApplicationState, dateReviver } from '../src/index';
+import *  as CryptoJS from 'crypto-js';
 
 // Very simple classes to test serialization options.  They cover string, number, date, and nested classes
 //  The top level class has static functions to help test reviver, replacer, serialize and deserialize
@@ -43,6 +44,22 @@ class TypeA {
         public adate: Date = undefined,
         public aclass: TypeB = undefined
     ) { }
+}
+
+class TypeC extends TypeA {
+    static key = 's3cret';
+
+    static encrypt(message: string) {
+        let secret = CryptoJS.AES.encrypt(message, TypeC.key);
+        return secret.toString();
+    }
+
+    static decrypt(message: string) {
+        let decoded = CryptoJS.AES.decrypt(message, TypeC.key);
+        decoded = decoded.toString(CryptoJS.enc.Utf8);
+
+        return decoded;
+    }
 }
 
 class MockStorage implements Storage {
@@ -263,5 +280,38 @@ describe('ngrxLocalStorage', () => {
         syncStateUpdate(undefinedState, ['state'], s, false);
         raw = s.getItem('state');
         expect(raw).toEqual(t1Json);
+    });
+
+    it('encrypt-decrypt', () => {
+        let s = new MockStorage();
+        let initialState = { state: t1 };
+        let keys = [{ state: { encrypt: TypeC.encrypt, decrypt: TypeC.decrypt } }];
+
+        syncStateUpdate(initialState, keys, s, false);
+        // Decript stored value and compare with the on-memory state 
+        let raw = s.getItem('state');
+        expect(TypeC.decrypt(raw)).toEqual(JSON.stringify(initialState.state));
+
+        // Retrieve the stored state with the rehydrateApplicationState function and 
+        let storedState = rehydrateApplicationState(keys, s);
+        expect(initialStateJson).toEqual(JSON.stringify(storedState));
+    });
+
+    it('encrypt-decrypt-are-required', () => {
+        let s = new MockStorage();
+        let initialState = { state: t1 };
+        let keys;
+        keys = [{ state: { encrypt: TypeC.encrypt } }];
+
+        syncStateUpdate(initialState, keys, s, false);
+        // Stored value must not be encripted, so must be equal to the on-memory state 
+        let raw = s.getItem('state');
+        expect(raw).toEqual(JSON.stringify(initialState.state));
+
+        // Stored value must not be encripted, if one of the encryption functions are not present
+        keys = [{ state: { decrypt: TypeC.decrypt } }];
+        syncStateUpdate(initialState, keys, s, false);
+        raw = s.getItem('state');
+        expect(raw).toEqual(JSON.stringify(initialState.state));
     });
 });

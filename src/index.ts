@@ -110,11 +110,14 @@ export const syncStateUpdate = (state: any, keys: any[], storage: Storage, remov
                         }, {});
                     }
 
-                    // Only check for encrypt function, both were checked at this#rehydrateApplicationState()
-                    if (key[name].encrypt) {
+                    // Check if encrypt and decrypt are present, also checked at this#rehydrateApplicationState()
+                    if (key[name].encrypt && key[name].decrypt) {
                         if (typeof (key[name].encrypt) === 'function') {
                             encrypt = key[name].encrypt;
                         }
+                    } else if (key[name].encrypt || key[name].decrypt) {
+                        // If one of those is not present, then let know that one is missing
+                        console.error(`Either encrypt or decrypt function is not present on '${key[name]}' key object.`);
                     }
                 }
 
@@ -132,7 +135,8 @@ export const syncStateUpdate = (state: any, keys: any[], storage: Storage, remov
         if (typeof(stateSlice) !== 'undefined') {
             try {
                 if (encrypt) {
-                    stateSlice = encrypt(stateSlice);
+                    // ensure that a string message is passed
+                    stateSlice = encrypt(typeof stateSlice === 'string' ? stateSlice : JSON.stringify(stateSlice, replacer, space));
                 }
                 storage.setItem(key, typeof stateSlice === 'string' ? stateSlice : JSON.stringify(stateSlice, replacer, space));
             } catch (e) {
