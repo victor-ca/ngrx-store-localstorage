@@ -32,6 +32,7 @@ export const rehydrateApplicationState = (keys: any[], storage: Storage) => {
         let key = curr;
         let reviver = dateReviver;
         let deserialize = undefined;
+        let decrypt = undefined;
 
         if (typeof key === 'object') {
           key = Object.keys(key)[0];
@@ -49,12 +50,28 @@ export const rehydrateApplicationState = (keys: any[], storage: Storage) => {
                 deserialize = curr[key].deserialize;
               }
           }
+
+          // Ensure that encrypt and decrypt functions are both presents
+          if (curr[key].encrypt && curr[key].decrypt) {
+              if (typeof (curr[key].encrypt) === 'function' && typeof (curr[key].decrypt) === 'function') {
+                  decrypt = curr[key].decrypt;
+              } else {
+                  console.error(`Either encrypt or decrypt is not a function on '${curr[key]}' key object.`);
+              }
+          } else if (curr[key].encrypt || curr[key].decrypt) {
+              // Let know that one of the encryption functions is not provided
+              console.error(`Either encrypt or decrypt function is not present on '${curr[key]}' key object.`);
+          }
         }
 
         let stateSlice = storage.getItem(key);
         if (stateSlice) {
+            // Use provided decrypt function
+            if (decrypt) {
+                stateSlice = decrypt(stateSlice);
+            }
             let raw = JSON.parse(stateSlice, reviver);
-            return Object.assign({}, acc, { [key]: deserialize ? deserialize(raw) : raw});
+            return Object.assign({}, acc, { [key]: deserialize ? deserialize(raw) : raw });
         }
         return acc;
     }, {});
@@ -66,6 +83,7 @@ export const syncStateUpdate = (state: any, keys: any[], storage: Storage, remov
         let stateSlice = state[key];
         let replacer = undefined;
         let space = undefined;
+        let encrypt = undefined;
 
         if (typeof key === 'object') {
             let name = Object.keys(key)[0];
@@ -90,11 +108,20 @@ export const syncStateUpdate = (state: any, keys: any[], storage: Storage, remov
                             memo[attr] = stateSlice[attr];
                             return memo;
                         }, {});
+                    }
 
+                    // Check if encrypt and decrypt are present, also checked at this#rehydrateApplicationState()
+                    if (key[name].encrypt && key[name].decrypt) {
+                        if (typeof (key[name].encrypt) === 'function') {
+                            encrypt = key[name].encrypt;
+                        }
+                    } else if (key[name].encrypt || key[name].decrypt) {
+                        // If one of those is not present, then let know that one is missing
+                        console.error(`Either encrypt or decrypt function is not present on '${key[name]}' key object.`);
                     }
                 }
 
-                /* 
+                /*
                     Replacer and space arguments to pass to JSON.stringify.
                     If these fields don't exist, undefined will be passed.
                 */
@@ -107,6 +134,10 @@ export const syncStateUpdate = (state: any, keys: any[], storage: Storage, remov
 
         if (typeof(stateSlice) !== 'undefined') {
             try {
+                if (encrypt) {
+                    // ensure that a string message is passed
+                    stateSlice = encrypt(typeof stateSlice === 'string' ? stateSlice : JSON.stringify(stateSlice, replacer, space));
+                }
                 storage.setItem(key, typeof stateSlice === 'string' ? stateSlice : JSON.stringify(stateSlice, replacer, space));
             } catch (e) {
                 console.warn('Unable to save state to localStorage:', e);
