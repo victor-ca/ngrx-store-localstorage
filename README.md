@@ -13,10 +13,11 @@ npm install ngrx-store-localstorage --save
 3. Optionally specify whether to rehydrate this state from local storage as `initialState` on application bootstrap.
 4. Invoke composed function with application reducers as an argument to `StoreModule.provideStore`.
 ```ts
-import { Store, StoreModule } from '@ngrx/store';
-import { todos, visibilityFilter } from './reducers';
 import { NgModule } from '@angular/core';
+import { StoreModule, combineReducers } from '@ngrx/store';
+import { compose } from '@ngrx/core/compose';
 import { localStorageSync } from 'ngrx-store-localstorage';
+import { todos, visibilityFilter } from './reducers';
 
 @NgModule({
   imports: [
