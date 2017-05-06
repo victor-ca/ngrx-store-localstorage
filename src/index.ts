@@ -152,9 +152,14 @@ export const syncStateUpdate = (state: any, keys: any[], storage: Storage, remov
     });
 };
 
-export const localStorageSync = (keys: any[], rehydrate: boolean = false, storage: Storage = localStorage, removeOnUndefined: boolean = false) => (reducer: any) => {
-    const stateKeys = validateStateKeys(keys);
-    const rehydratedState = rehydrate ? rehydrateApplicationState(stateKeys, storage) : undefined;
+export const localStorageSync = (config: LocalStorageConfig) => (reducer: any) => {
+
+    if (config.storage === undefined) {
+        config.storage = localStorage || window.localStorage;
+    }
+
+    const stateKeys = validateStateKeys(config.keys);
+    const rehydratedState = config.rehydrate ? rehydrateApplicationState(stateKeys, config.storage) : undefined;
 
     return function (state = rehydratedState, action: any) {
         /*
@@ -165,16 +170,33 @@ export const localStorageSync = (keys: any[], rehydrate: boolean = false, storag
             state = Object.assign({}, state, rehydratedState);
         }
         const nextState = reducer(state, action);
-        syncStateUpdate(nextState, stateKeys, storage, removeOnUndefined);
+        syncStateUpdate(nextState, stateKeys, config.storage, config.removeOnUndefined);
         return nextState;
     };
 };
 
 /*
+    @deprecated: Use localStorageSync(LocalStorageConfig)
+
     Wraps localStorageSync functionality acepting the removeOnUndefined boolean parameter in order
     to clean/remove the state from the browser on situations like state reset or logout.
     Defines localStorage as default storage.
 */
 export const localStorageSyncAndClean = (keys: any[], rehydrate: boolean = false, removeOnUndefined: boolean = false) => (reducer: any) => {
-    return this.localStorageSync(keys, rehydrate, localStorage, removeOnUndefined);
+
+    let config: LocalStorageConfig = {
+        keys: keys,
+        rehydrate: rehydrate,
+        storage: localStorage,
+        removeOnUndefined: removeOnUndefined
+    };
+
+    return this.localStorageSync(config);
 };
+
+export interface LocalStorageConfig {
+    keys: any[];
+    rehydrate?: boolean;
+    storage?: Storage;
+    removeOnUndefined?: boolean;
+}
