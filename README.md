@@ -10,7 +10,7 @@ npm install ngrx-store-localstorage --save
 ```
 1. Import `compose` and `combineReducers` from `@ngrx/store` and `@ngrx/core/compose`.
 2. Invoke the `localStorageSync` function after `combineReducers`, this receives a `LocalStorageConfig` object and assigns the property `keys` the slices of state you would like to keep synced with local storage.
-3. Optionally specify in the `LocalStorageConfig` whether to rehydrate this state from local storage as `initialState` on application bootstrap with the `rehydrateState` property.
+3. Optionally specify in the `LocalStorageConfig` whether to rehydrate this state from local storage as `initialState` on application bootstrap with the `rehydrate` property.
 4. Invoke composed function with application reducers as an argument to `StoreModule.provideStore`.
 ```ts
 import { NgModule } from '@angular/core';
@@ -65,7 +65,7 @@ An interface that holds the needed configuration attributes to bootstrap `localS
 
             * filter: An array of properties which should be synced (same format as the stand-along array specified above).
 
-* `rehydrateState` (optional) `boolean`: Pull initial state from local storage on startup, this will default to `false`.
+* `rehydrate` (optional) `boolean`: Pull initial state from local storage on startup, this will default to `false`.
 * `storage` (optional) `Storage`: Specify an object that conforms to the Storage interface to use, this will default to `localStorage`.
 * `removeOnUndefined` (optional) `boolean`: Specify if the state is removed from the storage when the new value is undefined, this will default to `false`.
 
