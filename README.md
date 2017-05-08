@@ -41,7 +41,7 @@ Provide state (reducer) keys to sync with local storage. *Returns a meta-reducer
 * `config` An object that matches with the `LocalStorageConfig` interface, `keys` is the only required property.
 
 ### **LocalStorageConfig**
-An interface that holds the needed configuration attributes to bootstrap `localStorageSync`. The following are properties which compose the `LocalStorageConfig`:
+An interface defining the configuration attributes to bootstrap `localStorageSync`. The following are properties which compose `LocalStorageConfig`:
 * `keys` (required) State keys to sync with local storage. The keys can be defined in two different formats:
     * `string[]`: Array of strings representing the state (reducer) keys. Full state will be synced (e.g. `localStorageSync({keys: ['todos']})`).
 
