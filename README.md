@@ -9,8 +9,8 @@ Simple syncing between ngrx store and local storage.
 npm install ngrx-store-localstorage --save
 ```
 1. Import `compose` and `combineReducers` from `@ngrx/store` and `@ngrx/core/compose`.
-2. Invoke the `localStorageSync` function after `combineReducers`, specifying the slices of state you would like to keep synced with local storage.
-3. Optionally specify whether to rehydrate this state from local storage as `initialState` on application bootstrap.
+2. Invoke the `localStorageSync` function after `combineReducers`, this receives a `LocalStorageConfig` object and assigns the property `keys` the slices of state you would like to keep synced with local storage.
+3. Optionally specify in the `LocalStorageConfig` whether to rehydrate this state from local storage as `initialState` on application bootstrap with the `rehydrateState` property.
 4. Invoke composed function with application reducers as an argument to `StoreModule.provideStore`.
 ```ts
 import { NgModule } from '@angular/core';
@@ -24,7 +24,7 @@ import { todos, visibilityFilter } from './reducers';
     BrowserModule,
     StoreModule.provideStore(
         compose(
-            localStorageSync(['todos']),
+            localStorageSync({keys: ['todos']}),
             combineReducers
         )({todos, visibilityFilter})
     )
@@ -34,17 +34,20 @@ export class MyAppModule {}
 ```
 
 ## API
-### `localStorageSync(keys: any[], rehydrateState: boolean = false, storage: Storage = localStorage, removeOnUndefined: boolean = false): Reducer`
-Provide state (reducer) keys to sync with local storage. Optionally specify whether to rehydrate `initialState` from local storage on bootstrap.
-*Returns a meta-reducer*.
+### `localStorageSync(config: LocalStorageConfig): Reducer`
+Provide state (reducer) keys to sync with local storage. *Returns a meta-reducer*.
 
 #### Arguments
-* `keys` State keys to sync with local storage. The keys can be defined in two different formats:
-    * \(*string[]*): Array of strings representing the state (reducer) keys. Full state will be synced (e.g. `localStorageSync(['todos'])`).
+* `config` An object that matches with the `LocalStorageConfig` interface, `keys` is the only required property.
 
-    * \(*object[]*): Array of objects where for each object the key represents the state key and the value represents custom serialize/deserialize options. This can be one of the following:
+### **LocalStorageConfig**
+An interface that holds the needed configuration attributes to bootstrap `localStorageSync`. The following are properties which compose the `LocalStorageConfig`:
+* `keys` (required) State keys to sync with local storage. The keys can be defined in two different formats:
+    * `string[]`: Array of strings representing the state (reducer) keys. Full state will be synced (e.g. `localStorageSync({keys: ['todos']})`).
 
-        * An array of properties which should be synced. This allows for the partial state sync (e.g. `localStorageSync([{todos: ['name', 'status'] }, ... ])`).
+    * `object[]`: Array of objects where for each object the key represents the state key and the value represents custom serialize/deserialize options. This can be one of the following:
+
+        * An array of properties which should be synced. This allows for the partial state sync (e.g. `localStorageSync({keys: [{todos: ['name', 'status'] }, ... ]})`).
 
         * A reviver function as specified in the [JSON.parse documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse).
 
@@ -62,12 +65,14 @@ Provide state (reducer) keys to sync with local storage. Optionally specify whet
 
             * filter: An array of properties which should be synced (same format as the stand-along array specified above).
 
-* `rehydrateState` \(*boolean? = false*): Pull initial state from local storage on startup.
-* `storage` \(*Storage? = localStorage*): Specify an object that conforms to the Storage interface to use, this will default localStorage.
-* `removeOnUndefined` \(*boolean? = false*): Specify if the state is removed from the storage when the new value is undefined.
+* `rehydrateState` (optional) `boolean`: Pull initial state from local storage on startup, this will default to `false`.
+* `storage` (optional) `Storage`: Specify an object that conforms to the Storage interface to use, this will default to `localStorage`.
+* `removeOnUndefined` (optional) `boolean`: Specify if the state is removed from the storage when the new value is undefined, this will default to `false`.
 
 ---
-### `localStorageSyncAndClean(keys: any[], rehydrate: boolean = false, removeOnUndefined: boolean = false): Reducer`
+### ~~`localStorageSyncAndClean(keys: any[], rehydrate: boolean = false, removeOnUndefined: boolean = false): Reducer`~~
+**This function is deprecated and soon will be removed, please use _localStorageSync(LocalStorageConfig)_.**
+
 A shorthand that wraps the functionalities of `localStorageSync` and asumes `localStorage` as the storage.
 
 #### Arguments
