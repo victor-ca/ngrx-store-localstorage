@@ -14,7 +14,7 @@ const validateStateKeys = (keys: any[]) => {
         let attr = key;
 
         if (typeof key === 'object') {
-          attr = Object.keys(key)[0];
+            attr = Object.keys(key)[0];
         }
 
         if (typeof (attr) !== 'string') {
@@ -27,7 +27,7 @@ const validateStateKeys = (keys: any[]) => {
     });
 };
 
-export const rehydrateApplicationState = (keys: any[], storage: Storage) => {
+export const rehydrateApplicationState = (keys: any[], storage: Storage, storageKeySerializer: (key: string) => string) => {
     return keys.reduce((acc, curr) => {
         let key = curr;
         let reviver = dateReviver;
@@ -35,36 +35,36 @@ export const rehydrateApplicationState = (keys: any[], storage: Storage) => {
         let decrypt = undefined;
 
         if (typeof key === 'object') {
-          key = Object.keys(key)[0];
-          // use the custom reviver function
-          if (typeof curr[key] === 'function') {
-              reviver = curr[key];
-          }
-          else {
-              // use custom reviver function if available
-              if (curr[key].reviver) {
-                reviver = curr[key].reviver;
-              }
-              // use custom serialize function if available
-              if (curr[key].deserialize) {
-                deserialize = curr[key].deserialize;
-              }
-          }
+            key = Object.keys(key)[0];
+            // use the custom reviver function
+            if (typeof curr[key] === 'function') {
+                reviver = curr[key];
+            }
+            else {
+                // use custom reviver function if available
+                if (curr[key].reviver) {
+                    reviver = curr[key].reviver;
+                }
+                // use custom serialize function if available
+                if (curr[key].deserialize) {
+                    deserialize = curr[key].deserialize;
+                }
+            }
 
-          // Ensure that encrypt and decrypt functions are both presents
-          if (curr[key].encrypt && curr[key].decrypt) {
-              if (typeof (curr[key].encrypt) === 'function' && typeof (curr[key].decrypt) === 'function') {
-                  decrypt = curr[key].decrypt;
-              } else {
-                  console.error(`Either encrypt or decrypt is not a function on '${curr[key]}' key object.`);
-              }
-          } else if (curr[key].encrypt || curr[key].decrypt) {
-              // Let know that one of the encryption functions is not provided
-              console.error(`Either encrypt or decrypt function is not present on '${curr[key]}' key object.`);
-          }
+            // Ensure that encrypt and decrypt functions are both presents
+            if (curr[key].encrypt && curr[key].decrypt) {
+                if (typeof (curr[key].encrypt) === 'function' && typeof (curr[key].decrypt) === 'function') {
+                    decrypt = curr[key].decrypt;
+                } else {
+                    console.error(`Either encrypt or decrypt is not a function on '${curr[key]}' key object.`);
+                }
+            } else if (curr[key].encrypt || curr[key].decrypt) {
+                // Let know that one of the encryption functions is not provided
+                console.error(`Either encrypt or decrypt function is not present on '${curr[key]}' key object.`);
+            }
         }
 
-        let stateSlice = storage.getItem(key);
+        let stateSlice = storage.getItem(storageKeySerializer(key));
         if (stateSlice) {
             // Use provided decrypt function
             if (decrypt) {
@@ -77,7 +77,7 @@ export const rehydrateApplicationState = (keys: any[], storage: Storage) => {
     }, {});
 };
 
-export const syncStateUpdate = (state: any, keys: any[], storage: Storage, removeOnUndefined: boolean) => {
+export const syncStateUpdate = (state: any, keys: any[], storage: Storage, storageKeySerializer: (key: string) => string, removeOnUndefined: boolean) => {
     keys.forEach(key => {
 
         let stateSlice = state[key];
@@ -132,23 +132,23 @@ export const syncStateUpdate = (state: any, keys: any[], storage: Storage, remov
             key = name;
         }
 
-        if (typeof(stateSlice) !== 'undefined') {
+        if (typeof (stateSlice) !== 'undefined') {
             try {
                 if (encrypt) {
                     // ensure that a string message is passed
                     stateSlice = encrypt(typeof stateSlice === 'string' ? stateSlice : JSON.stringify(stateSlice, replacer, space));
                 }
-                storage.setItem(key, typeof stateSlice === 'string' ? stateSlice : JSON.stringify(stateSlice, replacer, space));
+                storage.setItem(storageKeySerializer(key), typeof stateSlice === 'string' ? stateSlice : JSON.stringify(stateSlice, replacer, space));
             } catch (e) {
                 console.warn('Unable to save state to localStorage:', e);
             }
-        } else if (typeof(stateSlice) === 'undefined' && removeOnUndefined) {
+        } else if (typeof (stateSlice) === 'undefined' && removeOnUndefined) {
             try {
-                storage.removeItem(key);
+                storage.removeItem(storageKeySerializer(key));
             } catch (e) {
                 console.warn(`Exception on removing/cleaning undefined '${key}' state`, e);
             }
-    }
+        }
     });
 };
 
@@ -158,8 +158,12 @@ export const localStorageSync = (config: LocalStorageConfig) => (reducer: any) =
         config.storage = localStorage || window.localStorage;
     }
 
+    if (config.storageKeySerializer === undefined) {
+        config.storageKeySerializer = (key) => key;
+    }
+
     const stateKeys = validateStateKeys(config.keys);
-    const rehydratedState = config.rehydrate ? rehydrateApplicationState(stateKeys, config.storage) : undefined;
+    const rehydratedState = config.rehydrate ? rehydrateApplicationState(stateKeys, config.storage, config.storageKeySerializer) : undefined;
 
     return function (state = rehydratedState, action: any) {
         /*
@@ -170,7 +174,7 @@ export const localStorageSync = (config: LocalStorageConfig) => (reducer: any) =
             state = Object.assign({}, state, rehydratedState);
         }
         const nextState = reducer(state, action);
-        syncStateUpdate(nextState, stateKeys, config.storage, config.removeOnUndefined);
+        syncStateUpdate(nextState, stateKeys, config.storage, config.storageKeySerializer, config.removeOnUndefined);
         return nextState;
     };
 };
@@ -199,4 +203,5 @@ export interface LocalStorageConfig {
     rehydrate?: boolean;
     storage?: Storage;
     removeOnUndefined?: boolean;
+    storageKeySerializer?: (key: string) => string;
 }
