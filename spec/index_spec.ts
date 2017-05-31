@@ -1,11 +1,10 @@
 declare var beforeEachProviders, it, describe, expect, inject;
 require('es6-shim');
-require('reflect-metadata');
 import { syncStateUpdate, rehydrateApplicationState, dateReviver } from '../src/index';
 import *  as CryptoJS from 'crypto-js';
 
 // Very simple classes to test serialization options.  They cover string, number, date, and nested classes
-//  The top level class has static functions to help test reviver, replacer, serialize and deserialize
+// The top level class has static functions to help test reviver, replacer, serialize and deserialize
 class TypeB {
     constructor(public afield: string) { }
 }
@@ -65,10 +64,10 @@ class TypeC extends TypeA {
 class MockStorage implements Storage {
     public length: number;
     public clear(): void { throw 'Not Implemented'; }
-    public getItem(key: string): any {
-        return this[key];
+    public getItem(key: string): string | null {
+        return this[key] ? this[key] : null;
     }
-    key(index: number): string { throw 'Not Implemented'; }
+    key(index: number): string | null { throw 'Not Implemented'; }
     removeItem(key: string): void { this[key] = undefined; }
     setItem(key: string, data: string): void {
         this[key] = data;
@@ -76,6 +75,9 @@ class MockStorage implements Storage {
     [key: string]: any;
     [index: number]: string;
 }
+
+function mockStorageKeySerializer(key) { return key; }
+
 
 describe('ngrxLocalStorage', () => {
     let t1 = new TypeA(
@@ -107,16 +109,17 @@ describe('ngrxLocalStorage', () => {
     it('simple', () => {
         // This tests a very simple state object syncing to mock Storage
         // Since we're not specifiying anything for rehydration, the roundtrip
-        //  loses type information...
+        // loses type information...
 
         let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
 
-        syncStateUpdate(initialState, ['state'], s, false);
+        syncStateUpdate(initialState, ['state'], s, skr, false);
 
         let raw = s.getItem('state');
         expect(raw).toEqual(t1Json);
 
-        let finalState: any = rehydrateApplicationState(['state'], s);
+        let finalState: any = rehydrateApplicationState(['state'], s, skr);
         expect(JSON.stringify(finalState)).toEqual(initialStateJson);
 
         expect(t1 instanceof TypeA).toBeTruthy();
@@ -125,20 +128,21 @@ describe('ngrxLocalStorage', () => {
 
     it('filtered', () => {
         // Use the filter by field option to round-trip an object while
-        //  filtering out the anumber and adate filed 
+        // filtering out the anumber and adate filed
         // Since we're not specifiying anything for rehydration, the roundtrip
-        //  loses type information...
+        // loses type information...
 
         let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
         let initialState = { state: t1 };
         let keys = [{ state: ['astring', 'aclass'] }];
 
-        syncStateUpdate(initialState, keys, s, false);
+        syncStateUpdate(initialState, keys, s, skr, false);
 
         let raw = s.getItem('state');
         expect(raw).toEqual(JSON.stringify(t1Filtered));
 
-        let finalState: any = rehydrateApplicationState(keys, s);
+        let finalState: any = rehydrateApplicationState(keys, s, skr);
         expect(JSON.stringify(finalState)).toEqual(JSON.stringify({ state: t1Filtered }));
 
         expect(t1 instanceof TypeA).toBeTruthy();
@@ -149,12 +153,13 @@ describe('ngrxLocalStorage', () => {
         // Use the reviver option to restore including classes
 
         let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
         let initialState = { state: t1 };
         let keys = [{ state: TypeA.reviver }];
 
-        syncStateUpdate(initialState, keys, s, false);
+        syncStateUpdate(initialState, keys, s, skr, false);
 
-        let finalState: any = rehydrateApplicationState(keys, s);
+        let finalState: any = rehydrateApplicationState(keys, s, skr);
         expect(JSON.stringify(finalState)).toEqual(JSON.stringify(initialState));
         expect(finalState.state instanceof TypeA).toBeTruthy();
         expect(finalState.state.aclass instanceof TypeB).toBeTruthy();
@@ -164,12 +169,13 @@ describe('ngrxLocalStorage', () => {
         // Use the reviver in the object options to restore including classes
 
         let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
         let initialState = { state: t1 };
         let keys = [{ state: { reviver: TypeA.reviver } }];
 
-        syncStateUpdate(initialState, keys, s, false);
+        syncStateUpdate(initialState, keys, s, skr, false);
 
-        let finalState: any = rehydrateApplicationState(keys, s);
+        let finalState: any = rehydrateApplicationState(keys, s, skr);
         expect(JSON.stringify(finalState)).toEqual(JSON.stringify(initialState));
         expect(finalState.state instanceof TypeA).toBeTruthy();
         expect(finalState.state.aclass instanceof TypeB).toBeTruthy();
@@ -177,18 +183,19 @@ describe('ngrxLocalStorage', () => {
 
     it('filter-object', () => {
         // Use the filter by field option to round-trip an object while
-        //  filtering out the anumber and adate filed 
+        // filtering out the anumber and adate filed
 
         let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
         let initialState = { filtered: t1 };
         let keys = [{ filtered: { filter: ['astring', 'aclass'] } }];
 
-        syncStateUpdate(initialState, keys, s, false);
+        syncStateUpdate(initialState, keys, s, skr, false);
 
         let raw = s.getItem('filtered');
         expect(raw).toEqual(JSON.stringify(t1Filtered));
 
-        let finalState: any = rehydrateApplicationState(keys, s);
+        let finalState: any = rehydrateApplicationState(keys, s, skr);
         expect(JSON.stringify(finalState)).toEqual(JSON.stringify({ filtered: t1Filtered }));
 
         // Since we're not specifiying anything for rehydration, the roundtrip
@@ -201,12 +208,13 @@ describe('ngrxLocalStorage', () => {
         // Use the replacer function to filter
 
         let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
         let initialState = { replacer: t1 };
         let keys = [{ replacer: { reviver: TypeA.replacer } }];
 
-        syncStateUpdate(initialState, keys, s, false);
+        syncStateUpdate(initialState, keys, s, skr, false);
 
-        let finalState: any = rehydrateApplicationState(keys, s);
+        let finalState: any = rehydrateApplicationState(keys, s, skr);
         expect(JSON.stringify(finalState)).toEqual(JSON.stringify({ replacer: t1Filtered }));
 
         expect(t1 instanceof TypeA).toBeTruthy();
@@ -219,17 +227,18 @@ describe('ngrxLocalStorage', () => {
         //  fields not specified by the replacer, so we have to do some custom comparing
 
         let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
         let initialState = { replacer: t1 };
         let keys = [{ replacer: { replacer: ['astring', 'adate', 'anumber'], space: 2 } }];
 
-        syncStateUpdate(initialState, keys, s, false);
+        syncStateUpdate(initialState, keys, s, skr, false);
 
         // We want to validate the space parameter, but don't want to trip up on OS specific newlines, so filter the newlines out and
         //  compare against the literal string.
         let raw = s.getItem('replacer');
         expect(raw.replace(/\r?\n|\r/g, '')).toEqual('{  "astring": "Testing",  "adate": "1968-11-16T12:30:00.000Z",  "anumber": 3.14159\}');
 
-        let finalState: any = rehydrateApplicationState(keys, s);
+        let finalState: any = rehydrateApplicationState(keys, s, skr);
 
         expect(JSON.stringify(finalState)).toEqual('{"replacer":{"astring":"Testing","adate":"1968-11-16T12:30:00.000Z","anumber":3.14159}}');
 
@@ -241,12 +250,13 @@ describe('ngrxLocalStorage', () => {
         // Use the serialize/deserialize options to save and restore including classes
 
         let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
         let initialState = { state: t1 };
         let keys = [{ state: { serialize: TypeA.serialize, deserialize: TypeA.deserialize } }];
 
-        syncStateUpdate(initialState, keys, s, false);
+        syncStateUpdate(initialState, keys, s, skr, false);
 
-        let finalState: any = rehydrateApplicationState(keys, s);
+        let finalState: any = rehydrateApplicationState(keys, s, skr);
         expect(JSON.stringify(finalState)).toEqual(initialStateJson);
         expect(finalState.state instanceof TypeA).toBeTruthy();
         expect(finalState.state.aclass instanceof TypeB).toBeTruthy();
@@ -255,14 +265,15 @@ describe('ngrxLocalStorage', () => {
     it('removeOnUndefined', () => {
         // This tests that the state slice is removed when the state it's undefined
         let s = new MockStorage();
-        syncStateUpdate(initialState, ['state'], s, true);
+        let skr = mockStorageKeySerializer;
+        syncStateUpdate(initialState, ['state'], s, skr, true);
 
         // do update
         let raw = s.getItem('state');
         expect(raw).toEqual(t1Json);
 
         // ensure that it's erased
-        syncStateUpdate(undefinedState, ['state'], s, true);
+        syncStateUpdate(undefinedState, ['state'], s, skr, true);
         raw = s.getItem('state');
         expect(raw).toBeFalsy();
     });
@@ -270,48 +281,68 @@ describe('ngrxLocalStorage', () => {
     it('keepOnUndefined', () => {
         // This tests that the state slice is keeped when the state it's undefined
         let s = new MockStorage();
-        syncStateUpdate(initialState, ['state'], s, false);
+        let skr = mockStorageKeySerializer;
+        syncStateUpdate(initialState, ['state'], s, skr, false);
 
         // do update
         let raw = s.getItem('state');
         expect(raw).toEqual(t1Json);
 
         // test update doesn't erase when it's undefined
-        syncStateUpdate(undefinedState, ['state'], s, false);
+        syncStateUpdate(undefinedState, ['state'], s, skr, false);
         raw = s.getItem('state');
         expect(raw).toEqual(t1Json);
     });
 
     it('encrypt-decrypt', () => {
         let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
         let initialState = { state: t1 };
         let keys = [{ state: { encrypt: TypeC.encrypt, decrypt: TypeC.decrypt } }];
 
-        syncStateUpdate(initialState, keys, s, false);
-        // Decript stored value and compare with the on-memory state 
+        syncStateUpdate(initialState, keys, s, skr, false);
+        // Decript stored value and compare with the on-memory state
         let raw = s.getItem('state');
         expect(TypeC.decrypt(raw)).toEqual(JSON.stringify(initialState.state));
 
-        // Retrieve the stored state with the rehydrateApplicationState function and 
-        let storedState = rehydrateApplicationState(keys, s);
+        // Retrieve the stored state with the rehydrateApplicationState function and
+        let storedState = rehydrateApplicationState(keys, s, skr);
         expect(initialStateJson).toEqual(JSON.stringify(storedState));
     });
 
     it('encrypt-decrypt-are-required', () => {
         let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
         let initialState = { state: t1 };
         let keys;
         keys = [{ state: { encrypt: TypeC.encrypt } }];
 
-        syncStateUpdate(initialState, keys, s, false);
-        // Stored value must not be encripted due to decrypt function is not present, so must be equal to the on-memory state 
+        syncStateUpdate(initialState, keys, s, skr, false);
+        // Stored value must not be encripted due to decrypt function is not present, so must be equal to the on-memory state
         let raw = s.getItem('state');
         expect(raw).toEqual(JSON.stringify(initialState.state));
 
         // Stored value must not be encripted, if one of the encryption functions are not present
         keys = [{ state: { decrypt: TypeC.decrypt } }];
-        syncStateUpdate(initialState, keys, s, false);
+        syncStateUpdate(initialState, keys, s, skr, false);
         raw = s.getItem('state');
         expect(raw).toEqual(JSON.stringify(initialState.state));
+    });
+
+    it('storageKeySerializer', () => {
+        // This tests that storage key serializer are working.
+        let s = new MockStorage();
+        let skr = (key) => `this_key` + key;
+        console.log(skr('a'));
+        syncStateUpdate(initialState, ['state'], s, skr, false);
+
+        let raw = s.getItem('1232342');
+        expect(raw).toBeNull();
+
+        let finalState: any = rehydrateApplicationState(['state'], s, skr);
+        expect(JSON.stringify(finalState)).toEqual(initialStateJson);
+
+        expect(t1 instanceof TypeA).toBeTruthy();
+        expect(finalState.simple instanceof TypeA).toBeFalsy();
     });
 });
