@@ -2,22 +2,21 @@
 Simple syncing between ngrx store and local storage.
 
 ## Dependencies
-`ngrx-store-localstorage` depends on [@ngrx/store](https://github.com/ngrx/store) and [Angular 2](https://github.com/angular/angular).
+`ngrx-store-localstorage` depends on [@ngrx/store](https://github.com/ngrx/store) and [Angular 2+](https://github.com/angular/angular).
 
 ## Usage
 ```bash
 npm install ngrx-store-localstorage --save
 ```
-1. Import `compose` and `combineReducers` from `@ngrx/store` and `@ngrx/core/compose`.
-2. Invoke the `localStorageSync` function after `combineReducers`, this receives a `LocalStorageConfig` object and assigns the property `keys` the slices of state you would like to keep synced with local storage.
-3. Optionally specify in the `LocalStorageConfig` whether to rehydrate this state from local storage as `initialState` on application bootstrap with the `rehydrate` property.
-4. Invoke composed function with application reducers as an argument to `StoreModule.provideStore`.
+**UPDATE FOR NGRX 4**
+
+1. Wrap localStorageSync in an exported function.
+2. Include in your meta-reducers array in `StoreModule.forRoot`.
 ```ts
 import { NgModule } from '@angular/core';
 import { StoreModule, ActionReducerMap, ActionReducer } from '@ngrx/store';
-import { compose } from '@ngrx/core/compose';
 import { localStorageSync } from 'ngrx-store-localstorage';
-import { todos, visibilityFilter } from './reducers';
+import { reducers } from './reducers';
 
 
 const reducers: ActionReducerMap<IState> = {todos, visibilityFilter};
