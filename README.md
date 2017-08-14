@@ -14,6 +14,7 @@ npm install ngrx-store-localstorage --save
 2. Include in your meta-reducers array in `StoreModule.forRoot`.
 ```ts
 import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
 import { StoreModule, ActionReducerMap, ActionReducer } from '@ngrx/store';
 import { localStorageSync } from 'ngrx-store-localstorage';
 import { reducers } from './reducers';
