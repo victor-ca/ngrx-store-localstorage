@@ -108,4 +108,5 @@ A shorthand that wraps the functionalities of `localStorageSync` and asumes `loc
 
             * filter: An array of properties which should be synced (same format as the stand-along array specified above).
 * `rehydrateState` \(*boolean? = false*): Pull initial state from local storage on startup.
+* `restoreDates` \(*boolean? = true*): Restore serialized date objects. If you work directly with ISO date strings, set this option to `false`.
 * `removeOnUndefined` \(*boolean? = false*): Specify if the state is removed from the storage when the new value is undefined.

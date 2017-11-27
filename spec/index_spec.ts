@@ -83,7 +83,7 @@ describe('ngrxLocalStorage', () => {
     let t1 = new TypeA(
         'Testing',
         3.14159,
-        new Date('1968-11-16T12:30:00'),
+        new Date('1968-11-16T12:30:00Z'),
         new TypeB('Nested Class'));
 
     let t1Json = JSON.stringify(t1);
@@ -122,7 +122,7 @@ describe('ngrxLocalStorage', () => {
         let raw = s.getItem('state');
         expect(raw).toEqual(t1Json);
 
-        let finalState: any = rehydrateApplicationState(['state'], s, skr);
+        let finalState: any = rehydrateApplicationState(['state'], s, skr, true);
         expect(JSON.stringify(finalState)).toEqual(initialStateJson);
 
         expect(t1 instanceof TypeA).toBeTruthy();
@@ -138,7 +138,7 @@ describe('ngrxLocalStorage', () => {
         const raw = s.getItem('state');
         expect(raw).toEqual(primitiveStr);
 
-        const finalState: any = rehydrateApplicationState(['state'], s, skr);
+        const finalState: any = rehydrateApplicationState(['state'], s, skr, true);
         expect(finalState.state).toEqual(primitiveStr);
     });
 
@@ -158,7 +158,7 @@ describe('ngrxLocalStorage', () => {
         let raw = s.getItem('state');
         expect(raw).toEqual(JSON.stringify(t1Filtered));
 
-        let finalState: any = rehydrateApplicationState(keys, s, skr);
+        let finalState: any = rehydrateApplicationState(keys, s, skr, true);
         expect(JSON.stringify(finalState)).toEqual(JSON.stringify({ state: t1Filtered }));
 
         expect(t1 instanceof TypeA).toBeTruthy();
@@ -175,7 +175,7 @@ describe('ngrxLocalStorage', () => {
 
         syncStateUpdate(initialState, keys, s, skr, false);
 
-        let finalState: any = rehydrateApplicationState(keys, s, skr);
+        let finalState: any = rehydrateApplicationState(keys, s, skr, true);
         expect(JSON.stringify(finalState)).toEqual(JSON.stringify(initialState));
         expect(finalState.state instanceof TypeA).toBeTruthy();
         expect(finalState.state.aclass instanceof TypeB).toBeTruthy();
@@ -191,7 +191,7 @@ describe('ngrxLocalStorage', () => {
 
         syncStateUpdate(initialState, keys, s, skr, false);
 
-        let finalState: any = rehydrateApplicationState(keys, s, skr);
+        let finalState: any = rehydrateApplicationState(keys, s, skr, true);
         expect(JSON.stringify(finalState)).toEqual(JSON.stringify(initialState));
         expect(finalState.state instanceof TypeA).toBeTruthy();
         expect(finalState.state.aclass instanceof TypeB).toBeTruthy();
@@ -211,7 +211,7 @@ describe('ngrxLocalStorage', () => {
         let raw = s.getItem('filtered');
         expect(raw).toEqual(JSON.stringify(t1Filtered));
 
-        let finalState: any = rehydrateApplicationState(keys, s, skr);
+        let finalState: any = rehydrateApplicationState(keys, s, skr, true);
         expect(JSON.stringify(finalState)).toEqual(JSON.stringify({ filtered: t1Filtered }));
 
         // Since we're not specifiying anything for rehydration, the roundtrip
@@ -230,7 +230,7 @@ describe('ngrxLocalStorage', () => {
 
         syncStateUpdate(initialState, keys, s, skr, false);
 
-        let finalState: any = rehydrateApplicationState(keys, s, skr);
+        let finalState: any = rehydrateApplicationState(keys, s, skr, true);
         expect(JSON.stringify(finalState)).toEqual(JSON.stringify({ replacer: t1Filtered }));
 
         expect(t1 instanceof TypeA).toBeTruthy();
@@ -254,7 +254,7 @@ describe('ngrxLocalStorage', () => {
         let raw = s.getItem('replacer');
         expect(raw.replace(/\r?\n|\r/g, '')).toEqual('{  "astring": "Testing",  "adate": "1968-11-16T12:30:00.000Z",  "anumber": 3.14159\}');
 
-        let finalState: any = rehydrateApplicationState(keys, s, skr);
+        let finalState: any = rehydrateApplicationState(keys, s, skr, true);
 
         expect(JSON.stringify(finalState)).toEqual('{"replacer":{"astring":"Testing","adate":"1968-11-16T12:30:00.000Z","anumber":3.14159}}');
 
@@ -272,7 +272,7 @@ describe('ngrxLocalStorage', () => {
 
         syncStateUpdate(initialState, keys, s, skr, false);
 
-        let finalState: any = rehydrateApplicationState(keys, s, skr);
+        let finalState: any = rehydrateApplicationState(keys, s, skr, true);
         expect(JSON.stringify(finalState)).toEqual(initialStateJson);
         expect(finalState.state instanceof TypeA).toBeTruthy();
         expect(finalState.state.aclass instanceof TypeB).toBeTruthy();
@@ -310,6 +310,19 @@ describe('ngrxLocalStorage', () => {
         expect(raw).toEqual(t1Json);
     });
 
+    it('not restoreDates', () => {
+        // Tests that dates are not revived when the flag is set to false
+
+        let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
+        const initalState = {state: t1Simple};
+
+        syncStateUpdate(initalState, ['state'], s, skr, false);
+
+        let finalState: any = rehydrateApplicationState(['state'], s, skr, false);
+        expect(finalState).toEqual(initalState, 'rehydrated state should equal initial state');
+    });
+
     it('encrypt-decrypt', () => {
         let s = new MockStorage();
         let skr = mockStorageKeySerializer;
@@ -322,7 +335,7 @@ describe('ngrxLocalStorage', () => {
         expect(TypeC.decrypt(raw)).toEqual(JSON.stringify(initialState.state));
 
         // Retrieve the stored state with the rehydrateApplicationState function and
-        let storedState = rehydrateApplicationState(keys, s, skr);
+        let storedState = rehydrateApplicationState(keys, s, skr, true);
         expect(initialStateJson).toEqual(JSON.stringify(storedState));
     });
 
@@ -355,7 +368,7 @@ describe('ngrxLocalStorage', () => {
         let raw = s.getItem('1232342');
         expect(raw).toBeNull();
 
-        let finalState: any = rehydrateApplicationState(['state'], s, skr);
+        let finalState: any = rehydrateApplicationState(['state'], s, skr, true);
         expect(JSON.stringify(finalState)).toEqual(initialStateJson);
 
         expect(t1 instanceof TypeA).toBeTruthy();

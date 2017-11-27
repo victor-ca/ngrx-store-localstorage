@@ -9,6 +9,8 @@ export const dateReviver = (key: string, value: any) => {
     return value;
 };
 
+const dummyReviver = (key: string, value: any) => value;
+
 const validateStateKeys = (keys: any[]) => {
     return keys.map(key => {
         let attr = key;
@@ -27,10 +29,10 @@ const validateStateKeys = (keys: any[]) => {
     });
 };
 
-export const rehydrateApplicationState = (keys: any[], storage: Storage, storageKeySerializer: (key: string) => string) => {
+export const rehydrateApplicationState = (keys: any[], storage: Storage, storageKeySerializer: (key: string) => string, restoreDates: boolean) => {
     return keys.reduce((acc, curr) => {
         let key = curr;
-        let reviver = dateReviver;
+        let reviver = restoreDates ? dateReviver : dummyReviver;
         let deserialize = undefined;
         let decrypt = undefined;
 
@@ -169,8 +171,12 @@ export const localStorageSync = (config: LocalStorageConfig) => (reducer: any) =
         config.storageKeySerializer = (key) => key;
     }
 
+    if (config.restoreDates === undefined) {
+        config.restoreDates = true;
+    }
+
     const stateKeys = validateStateKeys(config.keys);
-    const rehydratedState = config.rehydrate ? rehydrateApplicationState(stateKeys, config.storage, config.storageKeySerializer) : undefined;
+    const rehydratedState = config.rehydrate ? rehydrateApplicationState(stateKeys, config.storage, config.storageKeySerializer, config.restoreDates) : undefined;
 
     return function (state = rehydratedState, action: any) {
         /*
@@ -210,5 +216,6 @@ export interface LocalStorageConfig {
     rehydrate?: boolean;
     storage?: Storage;
     removeOnUndefined?: boolean;
+    restoreDates?: boolean;
     storageKeySerializer?: (key: string) => string;
 }
