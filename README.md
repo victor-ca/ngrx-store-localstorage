@@ -75,6 +75,7 @@ An interface defining the configuration attributes to bootstrap `localStorageSyn
 * `storage` (optional) `Storage`: Specify an object that conforms to the [Storage interface](https://github.com/Microsoft/TypeScript/blob/master/lib/lib.dom.d.ts#L9708) to use, this will default to `localStorage`.
 * `removeOnUndefined` (optional) `boolean`: Specify if the state is removed from the storage when the new value is undefined, this will default to `false`.
 * `storageKeySerializer` (optional) `(key: string) => string`: Сustom serialize function for storage keys, used to avoid Storage conflicts. 
+* `restoreDates` \(*boolean? = true*): Restore serialized date objects. If you work directly with ISO date strings, set this option to `false`.
 Usage: `localStorageSync({keys: ['todos', 'visibilityFilter'], storageKeySerializer: (key) => 'cool_' + key, ... })`. In this example `Storage` will use keys `cool_todos` and `cool_visibilityFilter` keys to store `todos` and `visibilityFilter` slices of state). The key itself is used by default - `(key) => key`.
 
 ---
@@ -108,5 +109,4 @@ A shorthand that wraps the functionalities of `localStorageSync` and asumes `loc
 
             * filter: An array of properties which should be synced (same format as the stand-along array specified above).
 * `rehydrateState` \(*boolean? = false*): Pull initial state from local storage on startup.
-* `restoreDates` \(*boolean? = true*): Restore serialized date objects. If you work directly with ISO date strings, set this option to `false`.
 * `removeOnUndefined` \(*boolean? = false*): Specify if the state is removed from the storage when the new value is undefined.
