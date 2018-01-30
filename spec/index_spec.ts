@@ -374,4 +374,46 @@ describe('ngrxLocalStorage', () => {
         expect(t1 instanceof TypeA).toBeTruthy();
         expect(finalState.simple instanceof TypeA).toBeFalsy();
     });
+
+    it('syncCondition', () => {
+        // Test that syncCondition can selectively trigger a sync state update
+        let s = new MockStorage();
+        let skr = mockStorageKeySerializer;
+
+        // Selector always returns false - meaning it should never sync
+        const shouldNotSyncSelector = (state: any) => {
+            return false;
+        };
+
+        syncStateUpdate(initialState, ['state'], s, skr, false, shouldNotSyncSelector);
+
+        let raw = s.getItem('state');
+        expect(raw).toEqual(null);
+
+        let finalState: any = rehydrateApplicationState(['state'], s, skr, true);
+        expect(JSON.stringify(finalState)).toEqual('{}');
+
+        // Selector should error - so still no sync
+        const errorSelector = (state: any) => {
+            return state.doesNotExist;
+        };
+
+        syncStateUpdate(initialState, ['state'], s, skr, false, errorSelector);
+
+        raw = s.getItem('state');
+        expect(raw).toEqual(null);
+
+        // Selector always returns true - so it should sync
+        const shouldSyncSelector = (state: any) => {
+            return true;
+        };
+
+        syncStateUpdate(initialState, ['state'], s, skr, false, shouldSyncSelector);
+
+        raw = s.getItem('state');
+        expect(raw).toEqual(t1Json);
+
+        finalState = rehydrateApplicationState(['state'], s, skr, true);
+        expect(JSON.stringify(finalState)).toEqual(initialStateJson);
+    });
 });

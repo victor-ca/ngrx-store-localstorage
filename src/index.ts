@@ -108,8 +108,22 @@ export const syncStateUpdate = (
   keys: any[],
   storage: Storage,
   storageKeySerializer: (key: string) => string,
-  removeOnUndefined: boolean
+  removeOnUndefined: boolean,
+  syncCondition?: (state: any) => any
 ) => {
+  if (syncCondition) {
+    try {
+      if (syncCondition(state) !== true) {
+        return;
+      }
+    } catch (e) {
+      // Treat TypeError as do not sync
+      if (e instanceof TypeError) {
+        return;
+      }
+      throw e;
+    }
+  }
   keys.forEach(key => {
     let stateSlice = state[key];
     let replacer = undefined;
@@ -236,7 +250,8 @@ export const localStorageSync = (config: LocalStorageConfig) => (
       stateKeys,
       config.storage,
       config.storageKeySerializer,
-      config.removeOnUndefined
+      config.removeOnUndefined,
+      config.syncCondition
     );
     return nextState;
   };
@@ -271,4 +286,5 @@ export interface LocalStorageConfig {
   removeOnUndefined?: boolean;
   restoreDates?: boolean;
   storageKeySerializer?: (key: string) => string;
+  syncCondition?: (state: any) => any;
 }
