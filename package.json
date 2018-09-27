@@ -1,6 +1,6 @@
 {
   "name": "ngrx-store-localstorage",
-  "version": "5.0.1",
+  "version": "5.1.0",
   "description": "State and local storage syncing for @ngrx/store",
   "main": "./dist/index.js",
   "scripts": {
@@ -18,7 +18,13 @@
     "type": "git",
     "url": "git+https://github.com/btroncone/ngrx-store-localstorage.git"
   },
-  "keywords": ["redux", "ngrx", "store", "localstorage", "rxjs"],
+  "keywords": [
+    "redux",
+    "ngrx",
+    "store",
+    "localstorage",
+    "rxjs"
+  ],
   "author": "Brian Troncone",
   "license": "MIT",
   "bugs": {
