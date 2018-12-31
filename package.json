@@ -37,7 +37,7 @@
   "devDependencies": {
     "@angular/core": "^2.4.7",
     "@ngrx/core": "^1.2.0",
-    "@ngrx/store": "^5.0.0",
+    "@ngrx/store": "^7.0.0",
     "@types/core-js": "^0.9.35",
     "@types/crypto-js": "^3.1.33",
     "@types/jasmine": "^2.5.47",
@@ -47,6 +47,7 @@
     "es6-shim": "^0.35.0",
     "jasmine": "^2.4.1",
     "jasmine-core": "^2.4.1",
+    "localstorage-polyfill": "^1.0.1",
     "rimraf": "^2.5.4",
     "rxjs": "^5.1.1",
     "tslint": "^4.0.2",

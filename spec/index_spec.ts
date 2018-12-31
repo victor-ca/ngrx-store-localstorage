@@ -1,7 +1,9 @@
-declare var beforeEachProviders, it, describe, expect, inject;
+declare var it, describe, expect;
 require('es6-shim');
-import { syncStateUpdate, rehydrateApplicationState, dateReviver } from '../src/index';
+import { syncStateUpdate, rehydrateApplicationState, dateReviver, localStorageSync } from '../src/index';
 import *  as CryptoJS from 'crypto-js';
+import 'localstorage-polyfill';
+const INIT_ACTION = '@ngrx/store/init';
 
 // Very simple classes to test serialization options.  They cover string, number, date, and nested classes
 // The top level class has static functions to help test reviver, replacer, serialize and deserialize
@@ -415,5 +417,20 @@ describe('ngrxLocalStorage', () => {
 
         finalState = rehydrateApplicationState(['state'], s, skr, true);
         expect(JSON.stringify(finalState)).toEqual(initialStateJson);
+    });
+
+    it('merge initial state and rehydrated state', () => {
+        // localStorage starts out in a "bad" state. This could happen if our application state schema
+        // changes. End users may have the old schema and a software update has the new schema.
+        localStorage.setItem('state', JSON.stringify({oldstring: 'foo'}));
+
+        // Set up reducers
+        const reducer = (state = initialState, action) => state;
+        const metaReducer = localStorageSync({keys: ['state'], rehydrate: true});
+        const action = {type: INIT_ACTION};
+
+        // Resultant state should merge the oldstring state and our initual state
+        const finalState = metaReducer(reducer)(initialState, action);
+        expect(finalState.state.astring).toEqual(initialState.state.astring);
     });
 });
