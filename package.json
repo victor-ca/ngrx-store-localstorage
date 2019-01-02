@@ -1,6 +1,6 @@
 {
   "name": "ngrx-store-localstorage",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "description": "State and local storage syncing for @ngrx/store",
   "main": "./dist/index.js",
   "scripts": {
