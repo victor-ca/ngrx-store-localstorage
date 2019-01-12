@@ -317,7 +317,7 @@ describe('ngrxLocalStorage', () => {
 
         let s = new MockStorage();
         let skr = mockStorageKeySerializer;
-        const initalState = {state: t1Simple};
+        const initalState = { state: t1Simple };
 
         syncStateUpdate(initalState, ['state'], s, skr, false);
 
@@ -422,15 +422,67 @@ describe('ngrxLocalStorage', () => {
     it('merge initial state and rehydrated state', () => {
         // localStorage starts out in a "bad" state. This could happen if our application state schema
         // changes. End users may have the old schema and a software update has the new schema.
-        localStorage.setItem('state', JSON.stringify({oldstring: 'foo'}));
+        let hydratedState = {
+            ...initialState.state,
+            oldstring: 'foo'
+        };
+        delete hydratedState.astring;
+        localStorage.setItem('state', JSON.stringify(hydratedState));
 
         // Set up reducers
         const reducer = (state = initialState, action) => state;
-        const metaReducer = localStorageSync({keys: ['state'], rehydrate: true});
-        const action = {type: INIT_ACTION};
+        const metaReducer = localStorageSync({ keys: ['state'], rehydrate: true });
+        const action = { type: INIT_ACTION };
 
         // Resultant state should merge the oldstring state and our initual state
         const finalState = metaReducer(reducer)(initialState, action);
         expect(finalState.state.astring).toEqual(initialState.state.astring);
+        expect(finalState.state.oldstring).toBe('foo');
+    });
+
+    it('regression #111: should not mutate original state', () => {
+        const origObj = {};
+        let s1 = {
+            state: {
+                aobj: origObj
+            }
+        };
+        let hydratedState = {
+            aobj: {}
+        };
+
+        localStorage.setItem('state', JSON.stringify(hydratedState));
+        const reducer = (state = s1, action) => state;
+        const metaReducer = localStorageSync({ keys: ['state'], rehydrate: true });
+        const action = { type: INIT_ACTION };
+
+        // Resultant state should ignore astring due to type mismatch
+        const finalState = metaReducer(reducer)(s1, action);
+        expect(s1.state.aobj).toBe(origObj);
+    });
+
+    it('merge initial state and rehydrated state only if types match', () => {
+        // localStorage starts out in a "bad" state. This could happen if our application state schema
+        // changes. End users may have the old schema and a software update has the new schema.
+        let s1 = {
+            state: {
+                astring: 'test'
+            }
+        };
+        let hydratedState = {
+                astring: [] // some array
+        };
+
+        localStorage.setItem('state', JSON.stringify(hydratedState));
+
+        // Set up reducers
+        const reducer = (state = s1, action) => state;
+        const metaReducer = localStorageSync({ keys: ['state'], rehydrate: true });
+        const action = { type: INIT_ACTION };
+
+        // Resultant state should ignore astring due to type mismatch
+        const finalState = metaReducer(reducer)(s1, action);
+        // expect(finalState.state.astring).toEqual(finalState.state.astring); << succeeds because inital state is mutated
+        expect(finalState.state.astring).toEqual('test'); // fails
     });
 });

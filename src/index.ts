@@ -23,7 +23,7 @@ const validateStateKeys = (keys: any[]) => {
     if (typeof attr !== 'string') {
       throw new TypeError(
         `localStorageSync Unknown Parameter Type: ` +
-          `Expected type of string, got ${typeof attr}`
+        `Expected type of string, got ${typeof attr}`
       );
     }
     return key;
@@ -68,7 +68,7 @@ export const rehydrateApplicationState = (
         } else {
           console.error(
             `Either encrypt or decrypt is not a function on '${
-              curr[key]
+            curr[key]
             }' key object.`
           );
         }
@@ -76,7 +76,7 @@ export const rehydrateApplicationState = (
         // Let know that one of the encryption functions is not provided
         console.error(
           `Either encrypt or decrypt function is not present on '${
-            curr[key]
+          curr[key]
           }' key object.`
         );
       }
@@ -163,7 +163,7 @@ export const syncStateUpdate = (
             // If one of those is not present, then let know that one is missing
             console.error(
               `Either encrypt or decrypt function is not present on '${
-                key[name]
+              key[name]
               }' key object.`
             );
           }
@@ -230,36 +230,35 @@ export const localStorageSync = (config: LocalStorageConfig) => (
   const stateKeys = validateStateKeys(config.keys);
   const rehydratedState = config.rehydrate
     ? rehydrateApplicationState(
-        stateKeys,
-        config.storage,
-        config.storageKeySerializer,
-        config.restoreDates
-      )
+      stateKeys,
+      config.storage,
+      config.storageKeySerializer,
+      config.restoreDates
+    )
     : undefined;
 
-  return function(state = rehydratedState, action: any) {
+  return function (state = rehydratedState, action: any) {
     /*
          Handle case where state is rehydrated AND initial state is supplied.
          Any additional state supplied will override rehydrated state for the given key.
          */
     if (
       (action.type === INIT_ACTION || action.type === UPDATE_ACTION) &&
-      rehydratedState
+      rehydratedState && state !== rehydrateApplicationState
     ) {
-      if (state) {
-        Object.keys(state).forEach(function (key) {
-          if (state[key] instanceof Array && rehydratedState[key] instanceof Array) {
-              state[key] = rehydratedState[key];
-          } else if (typeof state[key] === 'object'
-              && typeof rehydratedState[key] === 'object') {
-              state[key] = Object.assign({}, state[key], rehydratedState[key]);
+        let initialAndRehydratedMerged = { ...state };
+        Object.keys(initialAndRehydratedMerged).forEach(function (key) {
+          if (typeof initialAndRehydratedMerged[key] === 'object' && typeof rehydratedState[key] === 'object') {
+            initialAndRehydratedMerged[key] = Object.assign({}, initialAndRehydratedMerged[key], rehydratedState[key]);
           } else {
-              state[key] = rehydratedState[key];
+            if (typeof initialAndRehydratedMerged[key] === typeof rehydratedState[key]) {
+              initialAndRehydratedMerged[key] = rehydratedState[key];
+            } else {
+              console.warn(`ngrx-stroe-localstorage - ${key} type mismatch, the property won't be rehydrated`);
+            }
           }
         });
-      } else {
-        state = Object.assign({}, state, rehydratedState);
-      }
+        state = initialAndRehydratedMerged;
     }
     const nextState = reducer(state, action);
     syncStateUpdate(
